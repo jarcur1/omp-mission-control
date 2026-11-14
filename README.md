@@ -99,6 +99,8 @@ Select a row and press `t`. Mission Control opens the same session-file route us
 
 An unsaved/ephemeral session has no trace; send a message in a normal persistent session first. The native stats server reuses a compatible dashboard on its standard port when available. If that port is occupied by another application, separate OMP runtime copies can create separate fallback dashboard servers; Mission Control follows OMP's server behavior.
 
+OMP's trace dashboard enforces its own sessions-directory boundary. Custom `--session-dir` locations, or a session outside the dashboard's active profile root, can be rejected by OMP even though their terminal is visible in Mission Control. Mission Control does not bypass that boundary.
+
 ## Local data and scope
 
 Presence is stored in `~/.omp/mission-control`, shared by projects and profiles for the current OS user. Optional `OMP_MC_DIR` overrides this directory; set it identically in every terminal that should see each other. Separate machines, OS users, and Windows/WSL environments are separate registries.
