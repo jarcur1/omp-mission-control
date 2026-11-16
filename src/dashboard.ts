@@ -1,4 +1,5 @@
 import {
+  Box,
   extractPrintableText,
   matchesKey,
   truncateToWidth,
@@ -401,17 +402,32 @@ export class MissionControlDashboard implements Component {
       return this.cachedLines;
     }
 
-    const lines = this.buildRenderLines(safeWidth, safeHeight).map((line) => {
-      const truncated = truncateToWidth(line, safeWidth);
+    // Reserve the panel chrome before laying out rows so the border never clips content.
+    const framed = safeWidth >= 5 && safeHeight >= 4;
+    const paddingY = framed && safeHeight >= 10 ? 1 : 0;
+    const contentWidth = framed ? safeWidth - 4 : safeWidth;
+    const contentHeight = framed ? safeHeight - 2 - paddingY * 2 : safeHeight;
+    const content = this.buildRenderLines(contentWidth, contentHeight).map((line) => {
+      const truncated = truncateToWidth(line, contentWidth);
       return truncated.includes("\x1b[") && !truncated.endsWith(RESET)
         ? `${truncated}${RESET}`
         : truncated;
     });
-    const bounded = lines.length > safeHeight ? lines.slice(0, safeHeight) : lines;
-    this.cachedLines = bounded;
+    let lines: readonly string[] = content;
+    if (framed) {
+      const panel = new Box(1, paddingY, undefined, {
+        chars: { topLeft: "╭", topRight: "╮", bottomLeft: "╰", bottomRight: "╯", horizontal: "─", vertical: "│" },
+        color: text => `${CYAN}${text}${RESET}`,
+      });
+      panel.setIgnoreTight(true);
+      panel.addChild({ render: () => content });
+      // Box pads every interior row to the full width, hiding the conversation underneath.
+      lines = panel.render(safeWidth);
+    }
+    this.cachedLines = lines;
     this.cachedWidth = safeWidth;
     this.cachedHeight = safeHeight;
-    return bounded;
+    return lines;
   }
 
   private buildRenderLines(width: number, height: number): string[] {

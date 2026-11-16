@@ -11,7 +11,7 @@ Mission Control answers **what is running now, and where?** OMP's `/resume` find
 - Focuses the selected terminal without resuming its conversation in a second process.
 - Offers **Open trace** for the selected session using OMP's existing `/trace` dashboard.
 - Refreshes every two seconds; removes closed sessions and excludes dead/stale presence records.
-- Supports keyboard navigation, filtering, scrolling, and compact terminal layouts.
+- Supports keyboard navigation, filtering, scrolling, and compact terminal layouts inside a bordered, padded panel.
 
 No context/spending charts, token accounting, or parallel analytics UI. Use **Open trace** for deeper inspection. Opening `/mc` makes no model requests.
 

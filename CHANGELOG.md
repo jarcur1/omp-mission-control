@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Wrap Mission Control in a bordered, padded panel that masks the conversation underneath and stays within the terminal dimensions.
+
 ## 0.1.0
 
 - Add `/mc`, a live OMP terminal dashboard shared across project directories and profiles.

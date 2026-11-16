@@ -137,10 +137,25 @@ describe("MissionControlDashboard", () => {
       [120, 24],
       [40, 7],
       [75, 4],
+      [5, 4],
+      [12, 5],
+      [1, 1],
+      [4, 3],
     ] as const) {
       height = h;
       const lines = dashboard.render(width);
       expect(lines.length).toBeLessThanOrEqual(h);
+      if (width >= 5 && h >= 4) {
+        const plainLines = lines.map(stripSgr);
+        expect(plainLines[0]).toBe(`╭${"─".repeat(width - 2)}╮`);
+        expect(plainLines.at(-1)).toBe(`╰${"─".repeat(width - 2)}╯`);
+        for (const line of plainLines.slice(1, -1)) {
+          expect(line.startsWith("│ ")).toBe(true);
+          expect(line.endsWith(" │")).toBe(true);
+        }
+        // Short rows must cover the full panel, not expose transcript text underneath.
+        for (const line of lines) expect(visibleWidth(line)).toBe(width);
+      }
       for (const line of lines) {
         expect(visibleWidth(line)).toBeLessThanOrEqual(width);
         expect(line).not.toContain("\x1b]");
