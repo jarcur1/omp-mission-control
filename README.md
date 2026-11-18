@@ -8,6 +8,7 @@ Mission Control answers **what is running now, and where?** OMP's `/resume` find
 
 - Shows live OMP terminals **across all project folders**, not just the current directory.
 - Displays project, model, current task, and **working / idle / waiting** status.
+- Shows the scheduled retry countdown when OMP is waiting on a usage limit.
 - Focuses the selected terminal without resuming its conversation in a second process.
 - Offers **Open trace** for the selected session using OMP's existing `/trace` dashboard.
 - Refreshes every two seconds; removes closed sessions and excludes dead/stale presence records.
@@ -80,6 +81,12 @@ Selection follows terminal identity across refreshes. If a selected terminal dis
 - **Idle:** ready for input, with no tracked work or user-facing wait.
 
 The task comes from the latest prompt; resumed sessions initially use their saved title or most recent user message. Selected details show the active tool's intent and full project directory. Custom extensions' private dialogs may not emit the lifecycle events used to identify waiting.
+
+## Quota retry countdown
+
+If OMP schedules a delayed retry after hitting a usage limit, select the terminal in `/mc` to see **Quota retry in …** in its details. It remains **Working** unless it needs your input. The countdown is OMP's scheduled retry time, not a guarantee that quota will be available then.
+
+To let OMP wait beyond its normal retry delay cap when the provider supplies a quota reset time, enable **Wait For Usage Reset** in `/settings` → **Model** → **Retry & Fallback** (`retry.waitForUsageReset`). OMP retries eligible turns in the same session. Leave the terminal open; Mission Control does not start or resume closed sessions.
 
 ## Terminal navigation
 
