@@ -5,6 +5,7 @@ import { cleanText } from "./types.ts";
 export class SessionState {
   task = "";
   compacting = false;
+  quotaRetryAt: number | undefined;
   readonly tools = new Map<string, { name: string; intent: string }>();
   readonly approvals = new Set<string>();
   readonly reviews = new Set<string>();
@@ -12,12 +13,13 @@ export class SessionState {
   reset(task = ""): void {
     this.task = cleanText(task);
     this.compacting = false;
+    this.quotaRetryAt = undefined;
     this.tools.clear();
     this.approvals.clear();
     this.reviews.clear();
   }
 
-  snapshot(idle: boolean, runningJobs: number): { status: SessionStatus; detail: string } {
+  snapshot(idle: boolean, runningJobs: number, now = Date.now()): { status: SessionStatus; detail: string } {
     if (this.approvals.size) return { status: "waiting", detail: "Awaiting tool approval" };
     if (this.reviews.size) return { status: "waiting", detail: "Awaiting plan review" };
     if ([...this.tools.values()].some(tool => tool.name === "ask")) {
@@ -26,6 +28,13 @@ export class SessionState {
     if (this.compacting) return { status: "working", detail: "Compacting context" };
     const active = [...this.tools.values()].at(-1);
     if (active) return { status: "working", detail: cleanText(active.intent || active.name) };
+    if (this.quotaRetryAt !== undefined && this.quotaRetryAt > now) {
+      const seconds = Math.ceil((this.quotaRetryAt - now) / 1000);
+      const minutes = Math.ceil(seconds / 60);
+      const remaining = seconds < 60 ? `${seconds}s`
+        : minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+      return { status: "working", detail: `Quota retry in ${remaining}` };
+    }
     if (!idle || runningJobs > 0) return {
       status: "working", detail: runningJobs > 0 ? `${runningJobs} background job${runningJobs === 1 ? "" : "s"}` : "Agent working",
     };

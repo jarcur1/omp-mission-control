@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { basename } from "node:path";
+import { Flag, is as hasErrorFlag } from "@oh-my-pi/pi-ai/error";
 import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
 import { MissionControlDashboard } from "./src/dashboard.ts";
 import { detectTerminal, focusTerminal } from "./src/focus.ts";
@@ -63,14 +64,15 @@ export default function missionControl(pi: ExtensionAPI): void {
         try {
           const cwd = current.sessionManager.getCwd();
           const model = current.models.current();
-          const status = state.snapshot(current.isIdle(), current.getAsyncJobSnapshot()?.running.length ?? 0);
+          const now = Date.now();
+          const status = state.snapshot(current.isIdle(), current.getAsyncJobSnapshot()?.running.length ?? 0, now);
           const record: LiveSession = {
             version: 1, instanceId, pid: process.pid,
             sessionId: current.sessionManager.getSessionId(),
             sessionFile: current.sessionManager.getSessionFile(),
             project: cleanText(basename(cwd) || cwd), cwd,
             model: model ? `${model.provider}/${model.id}` : "No model",
-            task: state.task || "No task yet", ...status, startedAt, updatedAt: Date.now(), terminal,
+            task: state.task || "No task yet", ...status, startedAt, updatedAt: now, terminal,
           };
           if (terminal.kind === "windows-terminal") {
             current.ui.setTitle(`${terminal.marker} ${record.status} | ${record.project} | ${cleanText(current.sessionManager.getSessionName() || record.task, 100)}`);
@@ -143,6 +145,20 @@ export default function missionControl(pi: ExtensionAPI): void {
   pi.on("plan_review_resolved", async (event, ctx) => {
     if (!isTerminal(ctx)) return;
     state.reviews.delete(event.reviewId);
+    await publish(ctx);
+  });
+  pi.on("auto_retry_start", async (event, ctx) => {
+    if (!isTerminal(ctx)) return;
+    const retryAt = event.delayMs > 0 && hasErrorFlag(event.errorId, Flag.UsageLimit)
+      ? Date.now() + event.delayMs
+      : undefined;
+    if (state.quotaRetryAt === retryAt) return;
+    state.quotaRetryAt = retryAt;
+    await publish(ctx);
+  });
+  pi.on("auto_retry_end", async (_event, ctx) => {
+    if (!isTerminal(ctx) || state.quotaRetryAt === undefined) return;
+    state.quotaRetryAt = undefined;
     await publish(ctx);
   });
   pi.on("auto_compaction_start", async (_event, ctx) => {

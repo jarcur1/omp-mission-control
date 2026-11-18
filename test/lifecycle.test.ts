@@ -1,4 +1,5 @@
 import { expect, spyOn, test } from "bun:test";
+import { create, Flag } from "@oh-my-pi/pi-ai/error";
 import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
 import missionControl from "../index.ts";
 import { Registry } from "../src/registry.ts";
@@ -78,4 +79,48 @@ test("slow presence IO coalesces events and publishes the newest state instead o
     await h.event("agent_start");
     expect(records.length).toBe(2);
   } finally { release(); write.mockRestore(); remove.mockRestore(); }
+});
+
+test("quota retry waits count down on presence ticks without hiding input waits", async () => {
+  const records: LiveSession[] = [];
+  const write = spyOn(Registry.prototype, "publish").mockImplementation(async record => { records.push(record); });
+  const remove = spyOn(Registry.prototype, "remove").mockResolvedValue();
+  let now = 1_700_000_000_000;
+  const clock = spyOn(Date, "now").mockImplementation(() => now);
+  try {
+    const h = sessionHarness();
+    const quota = { errorId: create(Flag.UsageLimit), delayMs: 7_980_000 };
+    const detail = () => records.at(-1)?.detail;
+    await h.event("session_start");
+    await h.event("auto_retry_start", quota);
+    expect(records.at(-1)?.status).toBe("working");
+    expect(detail()).toBe("Quota retry in 2h 13m");
+
+    await h.event("tool_approval_requested", { sessionId: "test-session", toolCallId: "approval" });
+    expect(detail()).toBe("Awaiting tool approval");
+    now += quota.delayMs - 4_000;
+    await h.event("tool_approval_resolved", { toolCallId: "approval" });
+    expect(detail()).toBe("Quota retry in 4s");
+    now += 2_000;
+    await h.ticks[0]();
+    expect(detail()).toBe("Quota retry in 2s");
+    now += 2_000;
+    await h.ticks[0]();
+    expect(detail()).toBe("Ready for input");
+
+    await h.event("auto_retry_start", quota);
+    await h.event("auto_retry_end", { success: false });
+    expect(detail()).toBe("Ready for input");
+    await h.event("auto_retry_start", { ...quota, delayMs: 0 });
+    await h.ticks[0]();
+    expect(detail()).toBe("Ready for input");
+
+    await h.event("auto_retry_start", quota);
+    await h.event("auto_retry_start", { ...quota, errorId: create(Flag.Transient) });
+    expect(detail()).toBe("Ready for input");
+    await h.event("auto_retry_start", quota);
+    await h.event("session_switch");
+    expect(detail()).toBe("Ready for input");
+    await h.event("session_shutdown");
+  } finally { clock.mockRestore(); write.mockRestore(); remove.mockRestore(); }
 });
