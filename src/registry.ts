@@ -3,7 +3,7 @@ import { constants as fsConstants, type Stats } from "node:fs";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import type { LiveSession, TerminalTarget } from "./types.ts";
+import { parseHerdrTarget, type LiveSession, type TerminalTarget } from "./types.ts";
 
 export const HEARTBEAT_MS = 2000;
 export const STALE_MS = 12000;
@@ -53,6 +53,8 @@ function validateTerminal(raw: unknown): TerminalTarget | null {
       }
       return { kind: "windows-terminal", marker: raw.marker };
     }
+    case "herdr":
+      return parseHerdrTarget("pane" in raw ? raw.pane : undefined, "socket" in raw ? raw.socket : undefined);
     case "tmux": {
       if (
         !("pane" in raw) ||
