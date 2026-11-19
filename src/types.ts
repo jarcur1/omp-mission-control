@@ -1,11 +1,22 @@
+import { posix, win32 } from "node:path";
+
 export type SessionStatus = "working" | "idle" | "waiting";
 
 export type TerminalTarget =
   | { kind: "windows-terminal"; marker: string }
+  | { kind: "herdr"; pane: string; socket: string }
   | { kind: "tmux"; pane: string; socket: string }
   | { kind: "wezterm"; pane: string; socket: string }
   | { kind: "kitty"; window: string; socket: string }
   | { kind: "unsupported"; reason: string };
+
+export function parseHerdrTarget(pane: unknown, socket: unknown): Extract<TerminalTarget, { kind: "herdr" }> | null {
+  if (typeof pane !== "string" || !/^w[a-z0-9]+:p[0-9]+$/.test(pane)) return null;
+  // Preserve the endpoint string: Windows Herdr uses the path itself as a named pipe name.
+  if (typeof socket !== "string" || /[\x00-\x1f\x7f]/.test(socket) ||
+      (!posix.isAbsolute(socket) && !win32.isAbsolute(socket))) return null;
+  return { kind: "herdr", pane, socket };
+}
 
 /** One live top-level interactive terminal, not a saved conversation or subagent. */
 export interface LiveSession {

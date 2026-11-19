@@ -147,6 +147,8 @@ describe("Registry", () => {
     const now = Date.now();
     const targets: TerminalTarget[] = [
       { kind: "windows-terminal", marker: `[MC:${crypto.randomUUID()}]` },
+      { kind: "herdr", pane: "w1:p2", socket: "/tmp/herdr/work session/herdr.sock" },
+      { kind: "herdr", pane: "w1:p2", socket: "C:\\Users\\test\\AppData\\Roaming\\herdr\\herdr.sock" },
       { kind: "tmux", pane: "%0", socket: "/tmp/tmux-1000/default" },
       { kind: "wezterm", pane: "42", socket: "/tmp/wezterm.sock" },
       { kind: "kitty", window: "7", socket: "unix:/tmp/kitty-1" },
@@ -287,6 +289,9 @@ describe("Registry", () => {
     const badTerminals: TerminalTarget[] = [
       { kind: "windows-terminal", marker: `MC:${crypto.randomUUID()}` },
       { kind: "windows-terminal", marker: "[MC:NOT_HEX]" },
+      { kind: "herdr", pane: "reviewer", socket: "/tmp/herdr.sock" },
+      { kind: "herdr", pane: "w1:p2", socket: " " },
+      { kind: "herdr", pane: "w1:p2", socket: "relative/herdr.sock" },
       { kind: "tmux", pane: "12", socket: "/tmp/tmux-1000/default" },
       { kind: "tmux", pane: "%12", socket: "relative/socket" },
       { kind: "wezterm", pane: "pane-1", socket: "/tmp/wezterm.sock" },

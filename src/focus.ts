@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { readFile } from "node:fs/promises";
 import { win32 } from "node:path";
-import type { TerminalTarget } from "./types.ts";
+import { parseHerdrTarget, type TerminalTarget } from "./types.ts";
 
 const exec = promisify(execFile);
 export type RunCommand = (file: string, args: string[], env?: NodeJS.ProcessEnv) => Promise<string>;
@@ -26,6 +26,11 @@ export function powershellPath(): string {
 }
 
 export function detectTerminal(instanceId: string, env = process.env, platform = process.platform): TerminalTarget {
+  // A Herdr pane can inherit its outer terminal or tmux environment.
+  if (env.HERDR_ENV === "1") {
+    return parseHerdrTarget(env.HERDR_PANE_ID, env.HERDR_SOCKET_PATH)
+      ?? { kind: "unsupported", reason: "Herdr pane identity or socket is unavailable." };
+  }
   if (env.TMUX && /^%\d+$/.test(env.TMUX_PANE ?? "")) {
     // TMUX = socket,pid,session; socket paths can themselves contain commas.
     return { kind: "tmux", pane: env.TMUX_PANE!, socket: env.TMUX.replace(/,\d+,\d+$/, "") };
@@ -38,7 +43,7 @@ export function detectTerminal(instanceId: string, env = process.env, platform =
   }
   // Windows Terminal's default-terminal handoff does not set WT_SESSION.
   if (platform === "win32") return { kind: "windows-terminal", marker: `[MC:${instanceId}]` };
-  return { kind: "unsupported", reason: "Focus requires Windows Terminal, tmux, WezTerm, or Kitty remote control." };
+  return { kind: "unsupported", reason: "Focus requires Herdr, Windows Terminal, tmux, WezTerm, or Kitty remote control." };
 }
 
 /** Never starts a new terminal or types into the destination's composer. */
@@ -52,6 +57,10 @@ export async function focusTerminal(target: TerminalTarget, run: RunCommand = ru
         Buffer.from(script, "utf16le").toString("base64")]);
       return;
     }
+    case "herdr":
+      await run(process.env.HERDR_BIN_PATH || "herdr", ["agent", "focus", target.pane],
+        { ...process.env, HERDR_SOCKET_PATH: target.socket });
+      return;
     case "tmux": {
       const output = await run("tmux", ["-S", target.socket, "list-clients", "-t", target.pane, "-F", "#{client_name}"]);
       const clients = [...new Set(output.trim().split(/\r?\n/).filter(Boolean))];

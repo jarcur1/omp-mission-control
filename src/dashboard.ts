@@ -73,6 +73,8 @@ function terminalShortName(terminal: TerminalTarget): string {
   switch (terminal.kind) {
     case "windows-terminal":
       return "WT";
+    case "herdr":
+      return "herdr";
     case "tmux":
       return "tmux";
     case "wezterm":
@@ -91,6 +93,8 @@ function describeTerminal(terminal: TerminalTarget, isCurrent: boolean): string 
       const marker = sanitize(terminal.marker, 48);
       return `Windows Terminal${marker ? ` (${marker})` : ""}${currentSuffix}`;
     }
+    case "herdr":
+      return `Herdr pane ${sanitize(terminal.pane, 48)}${currentSuffix}`;
     case "tmux": {
       const pane = sanitize(terminal.pane, 48);
       return `tmux${pane ? ` pane ${pane}` : ""}${currentSuffix}`;

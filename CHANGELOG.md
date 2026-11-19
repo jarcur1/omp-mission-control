@@ -4,6 +4,7 @@
 
 - Wrap Mission Control in a bordered, padded panel that masks the conversation underneath and stays within the terminal dimensions.
 - Show OMP's scheduled quota retry countdown in live session details without starting a separate retry loop.
+- Add optional Herdr pane detection and focus alongside the existing terminal backends.
 
 ## 0.1.0
 
