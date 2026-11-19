@@ -93,7 +93,7 @@ To let OMP wait beyond its normal retry delay cap when the provider supplies a q
 | Backend | Behavior / requirement |
 | --- | --- |
 | Windows Terminal | Selects the matching tab/pane and foregrounds its window through Windows UI Automation. PowerShell 5.1 is used for the bundled helper. Application-controlled tab titles must be enabled. |
-| Herdr | Selects the OMP pane in its local Herdr session. Requires Herdr's OMP integration and an attached Herdr client to see the switch. Does not foreground a separate OS window. |
+| Herdr | Selects the OMP pane or herdr-core terminal in the local Herdr window. Requires the older `herdr` multiplexer or herdr-core plus `herdr-app`. Does not foreground a separate OS window. |
 | tmux | Selects the destination pane/window and switches its sole attached client. Ambiguous or unattached clients are rejected. Does not foreground an OS terminal window. |
 | WezTerm | Activates the destination pane using its own `WEZTERM_UNIX_SOCKET`; requires the local CLI and a known socket. |
 | Kitty | Focuses the destination window using `KITTY_LISTEN_ON`; Kitty remote control must already be enabled. |
@@ -101,7 +101,12 @@ To let OMP wait beyond its normal retry delay cap when the provider supplies a q
 
 On Windows, Mission Control maintains an identifying `[MC:…]` terminal-title marker alongside project and status. Do not manually rename the tab or suppress application titles. Windows may refuse foreground activation; failures are shown rather than opening an unrelated terminal or sending keystrokes to it. The plugin does not change terminal settings or grant permissions.
 
-Herdr is optional. To use it, [install Herdr](https://herdr.dev/docs/install/), run `herdr integration install omp`, then start OMP with Mission Control loaded inside Herdr panes. `/mc` detects those panes automatically. If you open `/mc` outside Herdr, `herdr` must be on your `PATH` to focus a Herdr pane. Sessions outside Herdr keep using their existing terminal backends.
+Herdr is optional. `/mc` detects two Herdr identities:
+
+- **herdr-core:** terminals export `$HC_TERMINAL_ID` (`t7`, or `machine/t7` on another machine). Focus runs `herdr-app do pane.focus --terminal <id>`, then `agent.focus` if that terminal has no pane (a sub-agent). `herdr-app` must be on your `PATH`, or set `HERDR_APP_BIN_PATH`.
+- **Herdr multiplexer:** panes export `HERDR_ENV=1` with `HERDR_PANE_ID` / `HERDR_SOCKET_PATH`. [Install Herdr](https://herdr.dev/docs/install/), run `herdr integration install omp`, then start OMP inside those panes. Focus runs `herdr agent focus`. `herdr` must be on your `PATH` to focus from outside Herdr, or set `HERDR_BIN_PATH`.
+
+A multiplexer pane wins when both identities are present. Reload plugins or restart already-running OMP after installing so each terminal re-detects its backend. Sessions outside Herdr keep using their existing terminal backends.
 
 ## Open trace
 

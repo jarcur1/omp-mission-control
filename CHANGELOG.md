@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Detect herdr-core terminals from `$HC_TERMINAL_ID` and focus them with `herdr-app do pane.focus` (then `agent.focus` when there is no pane), while keeping the older `herdr` multiplexer path.
+
 ## 0.2.0
 
 - Wrap Mission Control in a bordered, padded panel that masks the conversation underneath and stays within the terminal dimensions.
