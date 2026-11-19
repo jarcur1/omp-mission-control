@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Load `@oh-my-pi/omp-stats` only when opening a trace, so `/mc` installs and starts on compiled OMP 18.22 hosts that remap `pi-utils` to the binary.
+
 ## 0.2.0
 
 - Wrap Mission Control in a bordered, padded panel that masks the conversation underneath and stays within the terminal dimensions.

@@ -5,6 +5,7 @@
     "": {
       "name": "omp-mission-control",
       "devDependencies": {
+        "@oh-my-pi/omp-stats": "18.20.0",
         "@oh-my-pi/pi-ai": "18.20.0",
         "@oh-my-pi/pi-coding-agent": "18.20.0",
         "@oh-my-pi/pi-tui": "18.20.0",

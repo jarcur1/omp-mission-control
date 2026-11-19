@@ -109,6 +109,8 @@ Select a row and press `t`. Mission Control opens the same session-file route us
 
 An unsaved/ephemeral session has no trace; send a message in a normal persistent session first. The native stats server reuses a compatible dashboard on its standard port when available. If that port is occupied by another application, separate OMP runtime copies can create separate fallback dashboard servers; Mission Control follows OMP's server behavior.
 
+Mission Control loads `@oh-my-pi/omp-stats` only when you press `t`, the same lazy import OMP's `/trace` uses. Opening `/mc` does not import the stats package. If Open trace cannot start the host dashboard (compiled OMP 18.22 remaps `pi-utils` to the binary while npm may still install omp-stats 19), run `/trace` in the selected session instead.
+
 OMP's trace dashboard enforces its own sessions-directory boundary. Custom `--session-dir` locations, or a session outside the dashboard's active profile root, can be rejected by OMP even though their terminal is visible in Mission Control. Mission Control does not bypass that boundary.
 
 ## Local data and scope
