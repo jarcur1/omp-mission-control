@@ -5,6 +5,7 @@ export type SessionStatus = "working" | "idle" | "waiting";
 export type TerminalTarget =
   | { kind: "windows-terminal"; marker: string }
   | { kind: "herdr"; pane: string; socket: string }
+  | { kind: "herdr-core"; terminal: string }
   | { kind: "tmux"; pane: string; socket: string }
   | { kind: "wezterm"; pane: string; socket: string }
   | { kind: "kitty"; window: string; socket: string }
@@ -16,6 +17,13 @@ export function parseHerdrTarget(pane: unknown, socket: unknown): Extract<Termin
   if (typeof socket !== "string" || /[\x00-\x1f\x7f]/.test(socket) ||
       (!posix.isAbsolute(socket) && !win32.isAbsolute(socket))) return null;
   return { kind: "herdr", pane, socket };
+}
+
+/** herdr-core address from `$HC_TERMINAL_ID`: `t7`, `t1g`, or `machine/t7`. */
+export function parseHerdrCoreTarget(terminal: unknown): Extract<TerminalTarget, { kind: "herdr-core" }> | null {
+  if (typeof terminal !== "string") return null;
+  if (!/^(?:[a-z0-9][a-z0-9._-]{0,31}\/)?t[a-z0-9]{1,32}$/.test(terminal)) return null;
+  return { kind: "herdr-core", terminal };
 }
 
 /** One live top-level interactive terminal, not a saved conversation or subagent. */

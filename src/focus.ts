@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { readFile } from "node:fs/promises";
 import { win32 } from "node:path";
-import { parseHerdrTarget, type TerminalTarget } from "./types.ts";
+import { parseHerdrCoreTarget, parseHerdrTarget, type TerminalTarget } from "./types.ts";
 
 const exec = promisify(execFile);
 export type RunCommand = (file: string, args: string[], env?: NodeJS.ProcessEnv) => Promise<string>;
@@ -30,6 +30,11 @@ export function detectTerminal(instanceId: string, env = process.env, platform =
   if (env.HERDR_ENV === "1") {
     return parseHerdrTarget(env.HERDR_PANE_ID, env.HERDR_SOCKET_PATH)
       ?? { kind: "unsupported", reason: "Herdr pane identity or socket is unavailable." };
+  }
+  // herdr-core sets $HC_TERMINAL_ID (`t7`, `mini/t4`) and TERM_PROGRAM of the host emulator.
+  if (env.HC_TERMINAL_ID) {
+    return parseHerdrCoreTarget(env.HC_TERMINAL_ID)
+      ?? { kind: "unsupported", reason: "Herdr terminal identity is unavailable." };
   }
   if (env.TMUX && /^%\d+$/.test(env.TMUX_PANE ?? "")) {
     // TMUX = socket,pid,session; socket paths can themselves contain commas.
@@ -61,6 +66,15 @@ export async function focusTerminal(target: TerminalTarget, run: RunCommand = ru
       await run(process.env.HERDR_BIN_PATH || "herdr", ["agent", "focus", target.pane],
         { ...process.env, HERDR_SOCKET_PATH: target.socket });
       return;
+    case "herdr-core": {
+      const binary = process.env.HERDR_APP_BIN_PATH || "herdr-app";
+      try {
+        await run(binary, ["do", "pane.focus", "--terminal", target.terminal]);
+      } catch {
+        await run(binary, ["do", "agent.focus", "--terminal", target.terminal]);
+      }
+      return;
+    }
     case "tmux": {
       const output = await run("tmux", ["-S", target.socket, "list-clients", "-t", target.pane, "-F", "#{client_name}"]);
       const clients = [...new Set(output.trim().split(/\r?\n/).filter(Boolean))];

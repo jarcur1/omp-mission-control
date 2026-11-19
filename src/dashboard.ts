@@ -74,6 +74,7 @@ function terminalShortName(terminal: TerminalTarget): string {
     case "windows-terminal":
       return "WT";
     case "herdr":
+    case "herdr-core":
       return "herdr";
     case "tmux":
       return "tmux";
@@ -95,6 +96,8 @@ function describeTerminal(terminal: TerminalTarget, isCurrent: boolean): string 
     }
     case "herdr":
       return `Herdr pane ${sanitize(terminal.pane, 48)}${currentSuffix}`;
+    case "herdr-core":
+      return `Herdr terminal ${sanitize(terminal.terminal, 48)}${currentSuffix}`;
     case "tmux": {
       const pane = sanitize(terminal.pane, 48);
       return `tmux${pane ? ` pane ${pane}` : ""}${currentSuffix}`;
